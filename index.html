@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pomodoro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg0: #0a0c16;
+    --bg1: #101426;
+    --card: rgba(255, 255, 255, 0.04);
+    --card-border: rgba(255, 255, 255, 0.07);
+    --text: #eef0f8;
+    --muted: #8b90a8;
+    --accent: #ff6b5e;
+    --accent-soft: rgba(255, 107, 94, 0.14);
+    --blue: #5aa9ff;
+    --blue-soft: rgba(90, 169, 255, 0.14);
+    --green: #4ade80;
+    --radius: 20px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { color-scheme: dark; }
+  body {
+    background:
+      radial-gradient(1100px 600px at 15% -10%, rgba(255, 107, 94, 0.09), transparent 60%),
+      radial-gradient(900px 500px at 95% 10%, rgba(90, 169, 255, 0.08), transparent 55%),
+      linear-gradient(180deg, var(--bg1), var(--bg0) 60%);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 28px 20px 70px; }
+
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+  .logo { display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 800; letter-spacing: -0.3px; }
+  .logo .dot { width: 12px; height: 12px; border-radius: 50%; background: linear-gradient(135deg, #ff8a5e, var(--accent)); box-shadow: 0 0 14px rgba(255, 107, 94, 0.7); }
+  .logo span { color: var(--accent); }
+  nav { display: flex; gap: 4px; background: var(--card); border: 1px solid var(--card-border); border-radius: 999px; padding: 4px; }
+  nav button {
+    background: transparent; color: var(--muted); border: none; cursor: pointer;
+    padding: 8px 20px; border-radius: 999px; font-size: 13.5px; font-weight: 600; font-family: inherit;
+    transition: all .2s;
+  }
+  nav button.active { background: linear-gradient(135deg, #ff8a5e, var(--accent)); color: #fff; box-shadow: 0 4px 16px rgba(255, 107, 94, 0.35); }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    padding: 28px;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  /* ---- Timer ---- */
+  .field-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px; color: var(--muted); font-weight: 600; margin-bottom: 10px; display: block; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+  .chip {
+    border: 1px solid var(--card-border); background: rgba(255,255,255,0.03); color: var(--muted);
+    padding: 7px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; font-family: inherit;
+    cursor: pointer; transition: all .18s;
+  }
+  .chip:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+  .chip.active { color: #fff; border-color: transparent; }
+  .chip.add { border-style: dashed; }
+  #newCatInput {
+    width: 130px; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border);
+    color: var(--text); padding: 7px 14px; border-radius: 999px; font-size: 13px; font-family: inherit; outline: none;
+  }
+
+  .task-row { margin-bottom: 24px; }
+  .task-row input {
+    width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); color: var(--text);
+    padding: 14px 16px; border-radius: 12px; font-size: 15.5px; font-family: inherit; outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .task-row input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .task-row input::placeholder { color: #565b72; }
+
+  .modes { display: flex; gap: 6px; justify-content: center; margin-bottom: 26px; }
+  .modes button {
+    background: transparent; color: var(--muted); border: 1px solid transparent; cursor: pointer;
+    padding: 8px 18px; border-radius: 999px; font-size: 13px; font-weight: 600; font-family: inherit;
+    transition: all .2s;
+  }
+  .modes button:hover { color: var(--text); }
+  .modes button.active { background: var(--accent-soft); color: var(--accent); border-color: rgba(255,107,94,0.3); }
+  .modes button.active.break { background: var(--blue-soft); color: var(--blue); border-color: rgba(90,169,255,0.3); }
+
+  .ring-wrap { position: relative; width: 300px; height: 300px; margin: 0 auto 26px; }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 7; }
+  .ring-fg { fill: none; stroke: url(#ringGrad); stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+  .ring-center {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  #clock { font-size: 64px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -1px; line-height: 1; }
+  #status { color: var(--muted); font-size: 13.5px; margin-top: 10px; min-height: 18px; text-align: center; padding: 0 30px; }
+
+  .controls { display: flex; gap: 12px; justify-content: center; }
+  .controls button {
+    border: none; cursor: pointer; font-size: 15px; font-weight: 700; font-family: inherit;
+    padding: 15px 44px; border-radius: 14px; transition: transform .12s, box-shadow .2s;
+  }
+  .controls button:active { transform: scale(0.97); }
+  #startBtn { background: linear-gradient(135deg, #ff8a5e, var(--accent)); color: #fff; box-shadow: 0 6px 24px rgba(255, 107, 94, 0.35); }
+  #startBtn.pause { background: linear-gradient(135deg, #f5c76a, #e0a63f); box-shadow: 0 6px 24px rgba(224, 166, 63, 0.3); }
+  #resetBtn { background: rgba(255,255,255,0.06); color: var(--muted); border: 1px solid var(--card-border); }
+  #resetBtn:hover { color: var(--text); }
+
+  .durations { display: flex; gap: 20px; justify-content: center; margin-top: 26px; color: var(--muted); font-size: 12.5px; font-weight: 500; }
+  .durations label { display: flex; align-items: center; gap: 7px; }
+  .durations input {
+    width: 54px; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); color: var(--text);
+    border-radius: 8px; padding: 5px 6px; text-align: center; font-family: inherit; font-size: 13px; outline: none;
+  }
+  .durations input:focus { border-color: var(--accent); }
+
+  /* ---- Dashboard ---- */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 26px; }
+  .stat {
+    background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius);
+    padding: 20px; backdrop-filter: blur(18px);
+  }
+  .stat .num { font-size: 32px; font-weight: 800; letter-spacing: -0.5px; }
+  .stat .lbl { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; font-weight: 600; margin-top: 6px; }
+
+  h2 { font-size: 12px; font-weight: 700; margin: 28px 0 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.4px; }
+
+  .cat-bars { display: flex; flex-direction: column; gap: 10px; }
+  .cat-bar-row { display: grid; grid-template-columns: 110px 1fr 70px; align-items: center; gap: 12px; font-size: 13.5px; }
+  .cat-bar-row .name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cat-bar-track { height: 10px; background: rgba(255,255,255,0.05); border-radius: 999px; overflow: hidden; }
+  .cat-bar-fill { height: 100%; border-radius: 999px; min-width: 4px; }
+  .cat-bar-row .mins { color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+
+  table { width: 100%; border-collapse: separate; border-spacing: 0 6px; font-size: 13.5px; }
+  th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; text-align: left; padding: 4px 14px; }
+  td { padding: 12px 14px; background: var(--card); }
+  tbody tr td:first-child { border-radius: 12px 0 0 12px; border-left: 1px solid var(--card-border); }
+  tbody tr td:last-child { border-radius: 0 12px 12px 0; border-right: 1px solid var(--card-border); }
+  tbody td { border-top: 1px solid var(--card-border); border-bottom: 1px solid var(--card-border); }
+
+  .tag { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 11.5px; font-weight: 700; }
+  .tag.work { background: var(--accent-soft); color: var(--accent); }
+  .tag.break { background: var(--blue-soft); color: var(--blue); }
+  .cat-pill { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 11.5px; font-weight: 700; }
+  .done { color: var(--green); font-weight: 600; }
+  .abandoned { color: var(--muted); }
+  .empty { color: var(--muted); text-align: center; padding: 34px; background: var(--card); border: 1px dashed var(--card-border); border-radius: var(--radius); font-size: 14px; }
+  .hidden { display: none; }
+
+  .dash-tools { display: flex; justify-content: flex-end; margin-bottom: 14px; }
+  .export-btn {
+    background: rgba(255,255,255,0.06); border: 1px solid var(--card-border); color: var(--muted);
+    padding: 8px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; text-decoration: none;
+    transition: all .15s;
+  }
+  .export-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.22); }
+
+  .del-btn {
+    background: none; border: none; color: #565b72; cursor: pointer;
+    font-size: 14px; padding: 4px 10px; border-radius: 8px; font-family: inherit; font-weight: 700;
+    transition: all .15s; white-space: nowrap;
+  }
+  .del-btn:hover { color: var(--accent); background: var(--accent-soft); }
+  .del-btn.confirm { color: #fff; background: var(--accent); font-size: 11.5px; }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(5, 7, 14, 0.65);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center; z-index: 50;
+    opacity: 0; pointer-events: none; transition: opacity .25s;
+  }
+  .modal-overlay.show { opacity: 1; pointer-events: auto; }
+  .modal {
+    background: #171b2c; border: 1px solid var(--card-border); border-radius: 24px;
+    padding: 38px 42px; text-align: center; max-width: 400px; width: 90%;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+    transform: translateY(14px) scale(0.97); transition: transform .25s;
+  }
+  .modal-overlay.show .modal { transform: none; }
+  .modal .modal-icon {
+    width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 18px;
+    background: linear-gradient(135deg, #ff8a5e, var(--accent));
+    box-shadow: 0 0 32px rgba(255, 107, 94, 0.5);
+  }
+  .modal .modal-icon.break { background: linear-gradient(135deg, #5ad0ff, #5a8aff); box-shadow: 0 0 32px rgba(90, 169, 255, 0.5); }
+  .modal h3 { font-size: 21px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.3px; }
+  .modal p { color: var(--muted); font-size: 14px; margin-bottom: 26px; line-height: 1.5; }
+  .modal-actions { display: flex; gap: 10px; justify-content: center; }
+  .modal-actions button {
+    border: none; cursor: pointer; font-size: 14.5px; font-weight: 700; font-family: inherit;
+    padding: 13px 28px; border-radius: 12px; transition: transform .12s;
+  }
+  .modal-actions button:active { transform: scale(0.97); }
+  #modalPrimary { background: linear-gradient(135deg, #ff8a5e, var(--accent)); color: #fff; box-shadow: 0 6px 24px rgba(255, 107, 94, 0.35); }
+  #modalPrimary.break { background: linear-gradient(135deg, #5ad0ff, #5a8aff); box-shadow: 0 6px 24px rgba(90, 169, 255, 0.35); }
+  #modalDismiss { background: rgba(255,255,255,0.06); color: var(--muted); border: 1px solid var(--card-border); }
+  #modalDismiss:hover { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo"><div class="dot"></div>Pomo<span>Timer</span></div>
+    <nav>
+      <button id="tabTimer" class="active">Timer</button>
+      <button id="tabDash">Dashboard</button>
+    </nav>
+  </header>
+
+  <!-- TIMER VIEW -->
+  <div id="viewTimer">
+    <div class="card">
+      <label class="field-label">Category</label>
+      <div class="chips" id="catChips"></div>
+
+      <div class="task-row">
+        <label class="field-label" for="taskInput">What are you working on?</label>
+        <input id="taskInput" list="taskList" placeholder="e.g. Write project proposal" autocomplete="off">
+        <datalist id="taskList"></datalist>
+      </div>
+
+      <div class="modes">
+        <button data-mode="work" class="active">Focus</button>
+        <button data-mode="short">Short Break</button>
+        <button data-mode="long">Long Break</button>
+      </div>
+
+      <div class="ring-wrap">
+        <svg width="300" height="300" viewBox="0 0 300 300">
+          <defs>
+            <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ff8a5e"/>
+              <stop offset="100%" stop-color="#ff5e6b"/>
+            </linearGradient>
+            <linearGradient id="ringGradBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#5ad0ff"/>
+              <stop offset="100%" stop-color="#5a8aff"/>
+            </linearGradient>
+          </defs>
+          <circle class="ring-bg" cx="150" cy="150" r="140"/>
+          <circle class="ring-fg" id="ringFg" cx="150" cy="150" r="140"/>
+        </svg>
+        <div class="ring-center">
+          <div id="clock">25:00</div>
+          <div id="status"></div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="startBtn">Start</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+
+      <div class="durations">
+        <label>Focus <input id="durWork" type="number" min="1" max="120" value="25"> min</label>
+        <label>Short <input id="durShort" type="number" min="1" max="60" value="5"> min</label>
+        <label>Long <input id="durLong" type="number" min="1" max="60" value="15"> min</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD VIEW -->
+  <div id="viewDash" class="hidden">
+    <div class="dash-tools">
+      <a class="export-btn" href="/api/export.csv" download>Export CSV</a>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="num" id="statToday">0</div><div class="lbl">Pomodoros today</div></div>
+      <div class="stat"><div class="num" id="statTodayMin">0m</div><div class="lbl">Focus today</div></div>
+      <div class="stat"><div class="num" id="statWeekMin">0m</div><div class="lbl">Focus this week</div></div>
+      <div class="stat"><div class="num" id="statTotal">0</div><div class="lbl">Total sessions</div></div>
+    </div>
+
+    <h2>Focus by category (this week)</h2>
+    <div class="cat-bars" id="catBars"></div>
+    <div id="catEmpty" class="empty">No focus sessions this week yet.</div>
+
+    <h2>By task</h2>
+    <table id="taskTable">
+      <thead><tr><th>Task</th><th>Category</th><th>Pomodoros</th><th>Focus time</th><th>Last worked</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div id="taskEmpty" class="empty">No sessions logged yet. Run a pomodoro!</div>
+
+    <h2>History</h2>
+    <table id="histTable">
+      <thead><tr><th>When</th><th>Task</th><th>Category</th><th>Type</th><th>Length</th><th>Result</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div id="histEmpty" class="empty">Nothing here yet.</div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-icon" id="modalIcon"></div>
+    <h3 id="modalTitle"></h3>
+    <p id="modalMsg"></p>
+    <div class="modal-actions">
+      <button id="modalPrimary"></button>
+      <button id="modalDismiss">Dismiss</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const MODES = { work: "durWork", short: "durShort", long: "durLong" };
+  const RING_LEN = 2 * Math.PI * 140;
+  const CAT_COLORS = ["#ff6b5e", "#5aa9ff", "#4ade80", "#f5c76a", "#c084fc", "#f472b6", "#2dd4bf", "#fb923c"];
+
+  let mode = "work";
+  let running = false;
+  let remaining = 25 * 60;
+  let sessionStart = null;
+  let plannedMin = 25;
+  let tick = null;
+  let sessions = [];
+
+  // --- categories ---
+  let categories = JSON.parse(localStorage.getItem("pomo.categories") || '["Work","Study","Personal"]');
+  let currentCat = localStorage.getItem("pomo.category") || categories[0];
+
+  function catColor(name) {
+    let i = categories.indexOf(name);
+    if (i < 0) { // stable color for categories no longer in the list
+      let h = 0;
+      for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+      i = h;
+    }
+    return CAT_COLORS[i % CAT_COLORS.length];
+  }
+
+  function renderChips() {
+    const box = $("catChips");
+    box.innerHTML = "";
+    for (const cat of categories) {
+      const b = document.createElement("button");
+      b.className = "chip" + (cat === currentCat ? " active" : "");
+      b.textContent = cat;
+      if (cat === currentCat) {
+        const c = catColor(cat);
+        b.style.background = c + "26";
+        b.style.color = c;
+        b.style.borderColor = c + "55";
+      }
+      b.addEventListener("click", () => {
+        currentCat = cat;
+        localStorage.setItem("pomo.category", cat);
+        renderChips();
+      });
+      b.addEventListener("dblclick", () => {
+        if (categories.length <= 1) return;
+        if (!confirm(`Remove category "${cat}"? (Past logs keep it)`)) return;
+        categories = categories.filter(c => c !== cat);
+        if (currentCat === cat) currentCat = categories[0];
+        localStorage.setItem("pomo.categories", JSON.stringify(categories));
+        localStorage.setItem("pomo.category", currentCat);
+        renderChips();
+      });
+      b.title = "Double-click to remove";
+      box.appendChild(b);
+    }
+    const add = document.createElement("button");
+    add.className = "chip add";
+    add.textContent = "+ Add";
+    add.addEventListener("click", () => {
+      const input = document.createElement("input");
+      input.id = "newCatInput";
+      input.placeholder = "New category";
+      input.maxLength = 24;
+      box.replaceChild(input, add);
+      input.focus();
+      const commit = () => {
+        const v = input.value.trim();
+        if (v && !categories.includes(v)) {
+          categories.push(v);
+          currentCat = v;
+          localStorage.setItem("pomo.categories", JSON.stringify(categories));
+          localStorage.setItem("pomo.category", v);
+        }
+        renderChips();
+      };
+      input.addEventListener("keydown", e => {
+        if (e.key === "Enter") commit();
+        if (e.key === "Escape") renderChips();
+      });
+      input.addEventListener("blur", commit);
+    });
+    box.appendChild(add);
+  }
+
+  // --- settings persistence ---
+  const savedDur = JSON.parse(localStorage.getItem("pomo.durations") || "{}");
+  for (const [m, inputId] of Object.entries(MODES)) {
+    if (savedDur[m]) $(inputId).value = savedDur[m];
+    $(inputId).addEventListener("change", () => {
+      const d = {};
+      for (const [mm, ii] of Object.entries(MODES)) d[mm] = +$(ii).value || 1;
+      localStorage.setItem("pomo.durations", JSON.stringify(d));
+      if (!running && mode === m) setMode(mode);
+    });
+  }
+  $("taskInput").value = localStorage.getItem("pomo.task") || "";
+  $("taskInput").addEventListener("input", () =>
+    localStorage.setItem("pomo.task", $("taskInput").value));
+
+  // --- timer core ---
+  function durFor(m) { return Math.max(1, +$(MODES[m]).value || 1); }
+
+  function fmt(sec) {
+    const m = Math.floor(sec / 60), s = sec % 60;
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
+
+  function render() {
+    $("clock").textContent = fmt(remaining);
+    const total = plannedMin * 60;
+    const frac = sessionStart ? Math.max(0, remaining / total) : 1;
+    const ring = $("ringFg");
+    ring.style.strokeDasharray = RING_LEN;
+    ring.style.strokeDashoffset = RING_LEN * (1 - frac);
+    ring.style.stroke = mode === "work" ? "url(#ringGrad)" : "url(#ringGradBlue)";
+    document.title = running ? `${fmt(remaining)} — ${mode === "work" ? ($("taskInput").value || "Focus") : "Break"}` : "Pomodoro";
+    $("startBtn").textContent = running ? "Pause" : (sessionStart ? "Resume" : "Start");
+    $("startBtn").classList.toggle("pause", running);
+  }
+
+  function setMode(m) {
+    if (running) return;
+    mode = m;
+    sessionStart = null;
+    plannedMin = durFor(m);
+    remaining = plannedMin * 60;
+    document.querySelectorAll(".modes button").forEach(b => {
+      b.classList.toggle("active", b.dataset.mode === m);
+      b.classList.toggle("break", b.dataset.mode === m && m !== "work");
+    });
+    $("status").textContent = "";
+    render();
+  }
+  document.querySelectorAll(".modes button").forEach(b =>
+    b.addEventListener("click", () => setMode(b.dataset.mode)));
+
+  let endTime = null;
+  function startTimer() {
+    if (!sessionStart) {
+      sessionStart = new Date().toISOString();
+      plannedMin = durFor(mode);
+      remaining = plannedMin * 60;
+    }
+    endTime = Date.now() + remaining * 1000;
+    running = true;
+    tick = setInterval(() => {
+      remaining = Math.max(0, Math.round((endTime - Date.now()) / 1000));
+      if (remaining <= 0) { finish(true); return; }
+      render();
+    }, 1000);
+    render();
+  }
+
+  $("startBtn").addEventListener("click", () => {
+    if (running) {
+      running = false;
+      clearInterval(tick);
+      render();
+      return;
+    }
+    if (mode === "work" && !$("taskInput").value.trim()) {
+      $("status").textContent = "Tip: set a task so it shows on your dashboard.";
+    }
+    startTimer();
+  });
+
+  $("resetBtn").addEventListener("click", () => {
+    if (sessionStart) {
+      const elapsedMin = plannedMin - remaining / 60;
+      if (elapsedMin >= 1) logSession(false, elapsedMin);
+    }
+    running = false;
+    clearInterval(tick);
+    setMode(mode);
+  });
+
+  function finish(completed) {
+    running = false;
+    clearInterval(tick);
+    remaining = 0;
+    render();
+    beep();
+    notify(mode === "work" ? "Pomodoro complete! Take a break." : "Break over — back to it!");
+    logSession(completed, plannedMin);
+    const wasWork = mode === "work";
+    const task = $("taskInput").value.trim();
+    sessionStart = null;
+    showModal(wasWork, task);
+  }
+
+  // --- completion modal ---
+  function showModal(wasWork, task) {
+    $("modalIcon").classList.toggle("break", wasWork);
+    $("modalTitle").textContent = wasWork ? "Pomodoro complete!" : "Break's over";
+    $("modalMsg").textContent = wasWork
+      ? (task ? `Nice work on “${task}”. Time for a break.` : "Nice work. Time for a break.")
+      : "Recharged? Time to get back to it.";
+    const primary = $("modalPrimary");
+    primary.textContent = wasWork ? "Start break" : "Start focus";
+    primary.classList.toggle("break", wasWork);
+    primary.dataset.next = wasWork ? "short" : "work";
+    $("modalOverlay").classList.add("show");
+  }
+  function hideModal() { $("modalOverlay").classList.remove("show"); }
+  $("modalPrimary").addEventListener("click", () => {
+    const next = $("modalPrimary").dataset.next;
+    hideModal();
+    setMode(next);
+    startTimer();
+  });
+  $("modalDismiss").addEventListener("click", () => {
+    const next = $("modalPrimary").dataset.next;
+    hideModal();
+    setMode(next);
+  });
+
+  // --- logging ---
+  async function logSession(completed, actualMin) {
+    const entry = {
+      task: mode === "work" ? ($("taskInput").value.trim() || "(unlabeled)") : "",
+      category: mode === "work" ? currentCat : "",
+      type: mode === "work" ? "work" : "break",
+      mode,
+      planned_min: plannedMin,
+      actual_min: Math.round(actualMin * 10) / 10,
+      started_at: sessionStart,
+      ended_at: new Date().toISOString(),
+      completed
+    };
+    sessions.push(entry);
+    refreshDash();
+    try {
+      await fetch("/api/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(entry)
+      });
+    } catch (e) {
+      $("status").textContent = "Warning: could not save to log file.";
+    }
+  }
+
+  async function loadSessions() {
+    try {
+      sessions = await (await fetch("/api/sessions")).json();
+    } catch (e) { sessions = []; }
+    refreshDash();
+  }
+
+  // --- notifications / sound ---
+  function beep() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [0, 0.25, 0.5].forEach(t => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = 880;
+        g.gain.setValueAtTime(0.001, ctx.currentTime + t);
+        g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.2);
+        o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.22);
+      });
+    } catch (e) {}
+  }
+  function notify(msg) {
+    if (Notification.permission === "granted") new Notification("PomoTimer", { body: msg });
+  }
+  if ("Notification" in window && Notification.permission === "default")
+    Notification.requestPermission();
+
+  // --- dashboard ---
+  function sameDay(a, b) { return a.toDateString() === b.toDateString(); }
+  function weekStart(d) {
+    const x = new Date(d); x.setHours(0,0,0,0);
+    x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+    return x;
+  }
+  function fmtMin(min) {
+    const h = Math.floor(min / 60), m = Math.round(min % 60);
+    return h ? `${h}h ${m}m` : `${m}m`;
+  }
+  function catPill(name) {
+    if (!name) return "—";
+    const c = catColor(name);
+    return `<span class="cat-pill" style="background:${c}26;color:${c}">${esc(name)}</span>`;
+  }
+
+  function refreshDash() {
+    const now = new Date(), ws = weekStart(now);
+    const work = sessions.filter(s => s.type === "work");
+    const todayDone = work.filter(s => s.completed && sameDay(new Date(s.ended_at), now));
+    const todayMin = work.filter(s => sameDay(new Date(s.ended_at), now))
+                         .reduce((a, s) => a + (s.actual_min || 0), 0);
+    const weekWork = work.filter(s => new Date(s.ended_at) >= ws);
+    const weekMin = weekWork.reduce((a, s) => a + (s.actual_min || 0), 0);
+
+    $("statToday").textContent = todayDone.length;
+    $("statTodayMin").textContent = fmtMin(todayMin);
+    $("statWeekMin").textContent = fmtMin(weekMin);
+    $("statTotal").textContent = sessions.length;
+
+    // category bars (this week)
+    const byCat = {};
+    for (const s of weekWork) {
+      const c = s.category || "(none)";
+      byCat[c] = (byCat[c] || 0) + (s.actual_min || 0);
+    }
+    const maxCat = Math.max(1, ...Object.values(byCat));
+    const catRows = Object.entries(byCat)
+      .sort((a, b) => b[1] - a[1])
+      .map(([c, min]) => {
+        const col = c === "(none)" ? "#565b72" : catColor(c);
+        return `<div class="cat-bar-row">
+          <div class="name" style="color:${col}">${esc(c)}</div>
+          <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${(min / maxCat * 100).toFixed(1)}%;background:${col}"></div></div>
+          <div class="mins">${fmtMin(min)}</div>
+        </div>`;
+      });
+    $("catBars").innerHTML = catRows.join("");
+    $("catEmpty").classList.toggle("hidden", catRows.length > 0);
+    $("catBars").classList.toggle("hidden", catRows.length === 0);
+
+    // by-task table
+    const byTask = {};
+    for (const s of work) {
+      const t = s.task || "(unlabeled)";
+      byTask[t] = byTask[t] || { count: 0, min: 0, last: s.ended_at, cat: s.category || "" };
+      if (s.completed) byTask[t].count++;
+      byTask[t].min += s.actual_min || 0;
+      if (s.ended_at > byTask[t].last) { byTask[t].last = s.ended_at; byTask[t].cat = s.category || byTask[t].cat; }
+    }
+    const taskRows = Object.entries(byTask)
+      .sort((a, b) => b[1].last.localeCompare(a[1].last))
+      .map(([t, v]) =>
+        `<tr><td>${esc(t)}</td><td>${catPill(v.cat)}</td><td>${v.count}</td><td>${fmtMin(v.min)}</td><td>${new Date(v.last).toLocaleString([], {month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"})}</td></tr>`);
+    $("taskTable").querySelector("tbody").innerHTML = taskRows.join("");
+    $("taskEmpty").classList.toggle("hidden", taskRows.length > 0);
+    $("taskTable").classList.toggle("hidden", taskRows.length === 0);
+
+    // history (latest 50)
+    const histRows = sessions.map((s, i) => ({ s, i })).reverse().slice(0, 50).map(({ s, i }) =>
+      `<tr>
+        <td>${new Date(s.started_at).toLocaleString([], {month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"})}</td>
+        <td>${esc(s.task) || "—"}</td>
+        <td>${catPill(s.category)}</td>
+        <td><span class="tag ${s.type}">${s.type}</span></td>
+        <td>${fmtMin(s.actual_min || 0)}</td>
+        <td class="${s.completed ? "done" : "abandoned"}">${s.completed ? "completed" : "stopped early"}</td>
+        <td><button class="del-btn" data-idx="${i}" title="Delete this session">✕</button></td>
+      </tr>`);
+    $("histTable").querySelector("tbody").innerHTML = histRows.join("");
+    $("histEmpty").classList.toggle("hidden", histRows.length > 0);
+    $("histTable").classList.toggle("hidden", histRows.length === 0);
+
+    // task autocomplete
+    $("taskList").innerHTML = Object.keys(byTask)
+      .filter(t => t !== "(unlabeled)")
+      .map(t => `<option value="${esc(t)}">`).join("");
+  }
+
+  // two-step inline confirm, then delete
+  $("histTable").addEventListener("click", async e => {
+    const btn = e.target.closest(".del-btn");
+    if (!btn) return;
+    if (!btn.classList.contains("confirm")) {
+      btn.classList.add("confirm");
+      btn.textContent = "Delete?";
+      setTimeout(() => { btn.classList.remove("confirm"); btn.textContent = "✕"; }, 2500);
+      return;
+    }
+    const idx = +btn.dataset.idx;
+    try {
+      const r = await fetch("/api/sessions", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ index: idx })
+      });
+      if (r.ok) {
+        sessions.splice(idx, 1);
+        refreshDash();
+      }
+    } catch (err) {}
+  });
+
+  function esc(s) {
+    return String(s || "").replace(/[&<>"']/g, c =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  // --- tabs ---
+  $("tabTimer").addEventListener("click", () => switchTab("Timer"));
+  $("tabDash").addEventListener("click", () => { refreshDash(); switchTab("Dash"); });
+  function switchTab(name) {
+    $("viewTimer").classList.toggle("hidden", name !== "Timer");
+    $("viewDash").classList.toggle("hidden", name !== "Dash");
+    $("tabTimer").classList.toggle("active", name === "Timer");
+    $("tabDash").classList.toggle("active", name === "Dash");
+  }
+
+  renderChips();
+  setMode("work");
+  loadSessions();
+})();
+</script>
+</body>
+</html>

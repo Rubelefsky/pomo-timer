@@ -1,0 +1,4 @@
+sessions.json
+backups/
+.DS_Store
+__pycache__/
