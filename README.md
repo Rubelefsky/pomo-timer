@@ -1,34 +1,49 @@
 # Pomo Timer
 
-Cross-platform (Mac/Windows) Pomodoro timer with session logging and a dashboard.
+A simple cross-platform Pomodoro timer (Mac/Windows) with built-in session tracking and a local dashboard.
 
-## Run
+## Quick start
 
-Requires Python 3 (no extra packages).
+Requires **Python 3** (no extra packages).
 
-- **Mac:** double-click `start-mac.command` (or run `python3 pomodoro.py`)
-- **Windows:** double-click `start-windows.bat` (or run `python pomodoro.py`)
+- **Mac:** double-click `start-mac.command`  
+  or run `python3 pomodoro.py`
+- **Windows:** double-click `start-windows.bat`  
+  or run `python pomodoro.py`
 
-Your browser opens automatically at http://localhost:8765.
+The app opens in your browser at **http://localhost:8765**.
 
-## Features
+## What it does
 
-- Set the task and category (Work / Study / Personal / custom) before starting a pomodoro
-- Focus / short break / long break timers with configurable durations
-- Popup, sound, and desktop notification when a timer ends
-- Dashboard shows today's pomodoros, focus time this week, per-category and per-task totals, and full history
-- Delete individual sessions from the history
+- Start focus sessions with a task name and category (Work / Study / Personal / custom)
+- Run focus, short-break, and long-break timers with configurable durations
+- Show popup, sound, and desktop notifications when a timer ends
+- Track stats in a dashboard:
+  - today’s pomodoros
+  - this week’s focus time
+  - per-category totals
+  - per-task totals
+  - full session history
+- Delete individual sessions
 - Export all sessions to CSV
 
-## Data & logs
+## Data, backups, and export
 
-- Every session (including ones stopped early) is appended to `sessions.json` next to `pomodoro.py`. If you keep this folder in a synced drive (Google Drive, Dropbox, OneDrive), your log follows you across machines.
-- The server snapshots the log into `backups/` once per day (e.g. `backups/sessions-2026-09-12.json`) at startup and before the first write of the day. The 14 most recent daily backups are kept. To restore, copy a backup over `sessions.json` while the server is stopped.
-- **Export CSV** on the dashboard downloads the full log as `pomodoro-sessions.csv` for analysis in Sheets/Excel.
-- An empty `sessions.json` and `backups/` folder ship with the repo, but your actual focus history stays local: backup snapshots are gitignored, and after cloning you should run
+- Sessions are stored in `sessions.json` next to `pomodoro.py` (including sessions stopped early).
+- A backup snapshot is created in `backups/` once per day (for example, `backups/sessions-2026-09-12.json`) at startup and before the first write of the day.
+- The 14 most recent daily backups are kept.
+- **Export CSV** downloads `pomodoro-sessions.csv` for analysis in Sheets/Excel.
 
-  ```
-  git update-index --skip-worktree sessions.json
-  ```
+To restore from backup: stop the app, then copy a backup file over `sessions.json`.
 
-  so git permanently ignores your local session data.
+## Keep your local session history out of git
+
+This repo includes an empty `sessions.json` and `backups/` folder, but your real history should stay local.
+
+After cloning, run:
+
+```bash
+git update-index --skip-worktree sessions.json
+```
+
+This tells git to keep ignoring your local `sessions.json` changes.
