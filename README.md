@@ -13,7 +13,16 @@ Your browser opens automatically at http://localhost:8765.
 
 ## Features
 
-- Set the task you're focusing on before starting a pomodoro
-- Work / short break / long break timers (durations configurable)
-- Every session is logged to `sessions.json` in this folder (syncs via Google Drive)
-- Dashboard shows today's pomodoros, focus time, per-task totals, and full history
+- Set the task and category (Work / Study / Personal / custom) before starting a pomodoro
+- Focus / short break / long break timers with configurable durations
+- Popup, sound, and desktop notification when a timer ends
+- Dashboard shows today's pomodoros, focus time this week, per-category and per-task totals, and full history
+- Delete individual sessions from the history
+- Export all sessions to CSV
+
+## Data & logs
+
+- Every session (including ones stopped early) is appended to `sessions.json` next to `pomodoro.py`. If you keep this folder in a synced drive (Google Drive, Dropbox, OneDrive), your log follows you across machines.
+- The server snapshots the log into `backups/` once per day (e.g. `backups/sessions-2026-09-12.json`) at startup and before the first write of the day. The 14 most recent daily backups are kept. To restore, copy a backup over `sessions.json` while the server is stopped.
+- **Export CSV** on the dashboard downloads the full log as `pomodoro-sessions.csv` for analysis in Sheets/Excel.
+- `sessions.json` and `backups/` are gitignored — your focus history stays local and never gets committed.
