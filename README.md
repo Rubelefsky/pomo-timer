@@ -1,8 +1,33 @@
-# Pomo Timer
+# 🍅 Pomo Timer
 
-A simple cross-platform Pomodoro timer (Mac/Windows) with built-in session tracking and a local dashboard.
+<p>
+  <img src="https://img.shields.io/badge/Python-3.x-3776AB?logo=python&logoColor=white" alt="Python 3">
+  <img src="https://img.shields.io/badge/Platform-Mac%20%7C%20Windows-1f6feb" alt="Platform">
+  <img src="https://img.shields.io/badge/Dependencies-None-2ea043" alt="No dependencies">
+  <img src="https://img.shields.io/badge/Storage-Local%20JSON-f0883e" alt="Local storage">
+</p>
 
-## Quick start
+A clean, local-first Pomodoro timer with a built-in dashboard, history, and CSV export.
+
+---
+
+## ✨ Features
+
+- Start focus sessions with a task name and category (Work / Study / Personal / custom)
+- Focus, short-break, and long-break cycles with configurable durations
+- Browser popup, sound, and desktop notifications when time is up
+- Dashboard metrics for:
+  - today’s pomodoros
+  - this week’s focus time
+  - category totals
+  - task totals
+  - full session history
+- Delete individual sessions
+- Export all sessions to CSV
+
+---
+
+## 🚀 Quick Start
 
 Requires **Python 3** (no extra packages).
 
@@ -11,23 +36,11 @@ Requires **Python 3** (no extra packages).
 - **Windows:** double-click `start-windows.bat`  
   or run `python pomodoro.py`
 
-The app opens in your browser at **http://localhost:8765**.
+Open: **http://localhost:8765**
 
-## What it does
+---
 
-- Start focus sessions with a task name and category (Work / Study / Personal / custom)
-- Run focus, short-break, and long-break timers with configurable durations
-- Show popup, sound, and desktop notifications when a timer ends
-- Track stats in a dashboard:
-  - today’s pomodoros
-  - this week’s focus time
-  - per-category totals
-  - per-task totals
-  - full session history
-- Delete individual sessions
-- Export all sessions to CSV
-
-## Data, backups, and export
+## 🗂 Data, Backups, and Export
 
 - Sessions are stored in `sessions.json` next to `pomodoro.py` (including sessions stopped early).
 - A backup snapshot is created in `backups/` once per day (for example, `backups/sessions-2026-09-12.json`) at startup and before the first write of the day.
@@ -36,7 +49,9 @@ The app opens in your browser at **http://localhost:8765**.
 
 To restore from backup: stop the app, then copy a backup file over `sessions.json`.
 
-## Keep your local session history out of git
+---
+
+## 🧹 Keep Local Session History Out of Git
 
 This repo includes an empty `sessions.json` and `backups/` folder, but your real history should stay local.
 
