@@ -1,4 +1,5 @@
 sessions.json
-backups/
+backups/*
+!backups/.gitkeep
 .DS_Store
 __pycache__/
