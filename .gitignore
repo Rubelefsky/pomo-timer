@@ -1,5 +1,10 @@
-sessions.json
-backups/*
-!backups/.gitkeep
+node_modules/
+dist/
+.env
+.env.local
 .DS_Store
 __pycache__/
+
+# Legacy local session log — data now lives in Supabase.
+sessions.json
+backups/

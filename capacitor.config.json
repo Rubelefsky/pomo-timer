@@ -1,0 +1,11 @@
+{
+  "appId": "com.rubelefsky.pomotimer",
+  "appName": "PomoTimer",
+  "webDir": "dist",
+  "backgroundColor": "#0a0c16",
+  "plugins": {
+    "LocalNotifications": {
+      "presentationOptions": ["alert", "sound"]
+    }
+  }
+}
