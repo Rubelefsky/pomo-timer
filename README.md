@@ -209,6 +209,15 @@ this permission for timer apps.
 
 ---
 
+## 📚 Documentation
+
+- [`CHANGELOG.md`](CHANGELOG.md) — what has been done so far, current project status, and what is next
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how the app, sync, timer, and the five shells fit together
+- [`docs/DECISIONS.md`](docs/DECISIONS.md) — why each technology and behaviour was chosen
+- [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) — problems that have come up and their fixes
+
+---
+
 ## 🗂 Project Layout
 
 ```
@@ -220,6 +229,7 @@ src/supabase.js      client setup (reads VITE_SUPABASE_* from .env)
 src/style.css        styles
 public/alarm.wav     notification sound (also copied to android/app/src/main/res/raw)
 supabase/schema.sql  database table + row-level security policies
+docs/, CHANGELOG.md  architecture, decisions, troubleshooting, history
 electron/main.cjs    Mac/Windows window, menu, Dock/taskbar alerts
 electron/preload.cjs bridge that exposes window.desktop to the page
 electron/icon.svg    app icon source (icon.png is the rendered 1024px version)
