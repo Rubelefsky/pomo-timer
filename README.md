@@ -1,15 +1,16 @@
 # 🍅 Pomo Timer
 
 <p>
-  <img src="https://img.shields.io/badge/Platform-iOS%20%7C%20Android%20%7C%20Desktop-1f6feb" alt="Platform">
+  <img src="https://img.shields.io/badge/Platform-iOS%20%7C%20Android%20%7C%20Mac%20%7C%20Windows-1f6feb" alt="Platform">
+  <img src="https://img.shields.io/badge/Electron-44-47848F?logo=electron&logoColor=white" alt="Electron 44">
   <img src="https://img.shields.io/badge/Capacitor-8-119EFF?logo=capacitor&logoColor=white" alt="Capacitor 8">
   <img src="https://img.shields.io/badge/Supabase-Sync-3ECF8E?logo=supabase&logoColor=white" alt="Supabase">
   <img src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white" alt="Vite">
 </p>
 
 A clean Pomodoro timer with a built-in dashboard, history, and export. One codebase runs as an
-**iPhone / iPad app**, an **Android app**, and in your **desktop browser**, with sessions synced
-through **Supabase** so every device shows the same history.
+**iPhone / iPad app**, an **Android app**, a **Mac app**, a **Windows app**, and in your
+**desktop browser**, with sessions synced through **Supabase** so every device shows the same history.
 
 ---
 
@@ -17,7 +18,8 @@ through **Supabase** so every device shows the same history.
 
 - Start focus sessions with a task name and category (Work / Study / Personal / custom)
 - Focus, short-break, and long-break cycles with configurable durations
-- Exact-time phone notifications with sound, even with the app closed; popup, sound, and desktop notifications in the browser
+- Exact-time phone notifications with sound, even with the app closed; popup, sound, and desktop notifications on Mac, Windows, and in the browser
+- On Mac and Windows the app bounces the Dock icon / flashes the taskbar when a timer ends, even if the window is hidden
 - A running timer survives backgrounding, locking the phone, or the app being killed
 - Dashboard metrics for:
   - today’s pomodoros
@@ -45,7 +47,7 @@ through **Supabase** so every device shows the same history.
 
 ### 2. Local build
 
-Requires **Node 18+** (Node 22 tested).
+Requires **Node 22.12+** (Node 22.16 tested); the Electron package refuses older versions.
 
 ```bash
 cp .env.example .env        # paste your Supabase URL + anon key into .env
@@ -63,13 +65,37 @@ backup file. Rows whose `started_at` already exists are skipped, so importing tw
 
 ---
 
-## 🚀 Run on Desktop
+## 🖥 Mac and Windows Apps
 
-- **Mac:** double-click `start-mac.command` or run `python3 pomodoro.py`
-- **Windows:** double-click `start-windows.bat` or run `python pomodoro.py`
+The desktop apps are the same web build wrapped in [Electron](https://www.electronjs.org)
+(`electron/`). Both installers can be built on a Mac; the Windows installer can also be built on
+Windows. Put your `.env` in place first (the Supabase keys are baked in at build time).
 
-Serves `dist/` at **http://localhost:8765** and opens your browser. Re-run `npm run build` after
-pulling changes. For development with hot reload use `npm run dev`.
+```bash
+npm run desktop         # build and launch the app locally, no installer
+npm run desktop:mac     # release/PomoTimer-<version>-mac-arm64.dmg and -mac-x64.dmg
+npm run desktop:win     # release/PomoTimer-<version>-win-x64.exe (installer)
+npm run desktop:all     # both
+```
+
+- **Mac:** open the DMG and drag PomoTimer to Applications. Closing the window keeps the app,
+  and any running timer, alive in the Dock; quit with ⌘Q. The build is not notarized, so on a
+  *different* Mac the first launch needs right-click → **Open** (or `xattr -cr /Applications/PomoTimer.app`).
+- **Windows:** run the installer (it asks for the folder and adds Start Menu and desktop
+  shortcuts). SmartScreen may show "Windows protected your PC" for an unsigned app: click
+  **More info → Run anyway**. Closing the window quits the app.
+- **Development:** run `npm run dev` in one terminal and `npm run desktop:dev` in another; the
+  window loads the Vite dev server with hot reload and opens DevTools.
+- **Building the Windows installer on a Mac** needs no Wine or Rosetta: `electron-builder.yml`
+  pins electron-builder's newer NSIS toolset, which ships native Apple Silicon binaries. The
+  first build downloads Electron for each target (about 100 MB each) into electron-builder's
+  cache. Neither platform's build is code-signed.
+
+Sign-in state and settings live in the app's own profile (`~/Library/Application Support/PomoTimer`
+on Mac, `%APPDATA%\PomoTimer` on Windows), separate from any browser.
+
+**Browser instead:** `start-mac.command` / `start-windows.bat` (or `python3 pomodoro.py`) still
+serve `dist/` at **http://localhost:8765** and open it in your default browser.
 
 ---
 
@@ -130,6 +156,10 @@ src/supabase.js      client setup (reads VITE_SUPABASE_* from .env)
 src/style.css        styles
 public/alarm.wav     notification sound (also copied to android/app/src/main/res/raw)
 supabase/schema.sql  database table + row-level security policies
-pomodoro.py          desktop static server / launcher
+electron/main.cjs    Mac/Windows window, menu, Dock/taskbar alerts
+electron/preload.cjs bridge that exposes window.desktop to the page
+electron/icon.svg    app icon source (icon.png is the rendered 1024px version)
+electron-builder.yml DMG / Windows installer packaging config (output in release/)
+pomodoro.py          browser-mode static server / launcher
 capacitor.config.json, ios/, android/   native app shells
 ```
