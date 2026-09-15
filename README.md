@@ -68,31 +68,76 @@ backup file. Rows whose `started_at` already exists are skipped, so importing tw
 ## 🖥 Mac and Windows Apps
 
 The desktop apps are the same web build wrapped in [Electron](https://www.electronjs.org)
-(`electron/`). Both installers can be built on a Mac; the Windows installer can also be built on
-Windows. Put your `.env` in place first (the Supabase keys are baked in at build time).
+(`electron/`), packaged with [electron-builder](https://www.electron.build). Installers are not
+committed to the repo; build them yourself (below) or grab them from a GitHub Release if one is
+attached.
+
+### Install
+
+| Your machine | File |
+|---|---|
+| Mac with Apple Silicon (M-series) | `PomoTimer-<version>-mac-arm64.dmg` |
+| Mac with an Intel chip | `PomoTimer-<version>-mac-x64.dmg` |
+| Windows 10 / 11, 64-bit | `PomoTimer-<version>-win-x64.exe` |
+
+Not sure which Mac you have? **Apple menu → About This Mac** shows "Chip: Apple M…" or "Intel".
+
+**Mac**
+
+1. Open the DMG and drag **PomoTimer** to **Applications**.
+2. The app is not notarized. If macOS says it "can't be opened", right-click the app → **Open**
+   once, or run `xattr -cr /Applications/PomoTimer.app`. Not needed on the Mac that built it.
+3. Allow notifications when prompted. If you dismissed the prompt: **System Settings →
+   Notifications → PomoTimer**.
+
+**Windows**
+
+1. Run the installer. SmartScreen may show "Windows protected your PC" because the app is not
+   code-signed: click **More info → Run anyway**.
+2. Pick an install folder (defaults to your user profile, no admin rights needed). The installer
+   adds Start Menu and desktop shortcuts.
+
+**Updating:** install the new version the same way; it replaces the old one and keeps your
+sign-in and settings. **Uninstalling:** drag the app to the Trash on Mac, or use
+**Settings → Apps** on Windows. Your data stays in Supabase either way.
+
+### Build the installers
+
+Needs Node 22.12+ and a `.env` with your Supabase keys (they are baked in at build time; a build
+without them opens on a "Connect to Supabase" screen).
 
 ```bash
 npm run desktop         # build and launch the app locally, no installer
 npm run desktop:mac     # release/PomoTimer-<version>-mac-arm64.dmg and -mac-x64.dmg
-npm run desktop:win     # release/PomoTimer-<version>-win-x64.exe (installer)
-npm run desktop:all     # both
+npm run desktop:win     # release/PomoTimer-<version>-win-x64.exe
+npm run desktop:all     # everything above
 ```
 
-- **Mac:** open the DMG and drag PomoTimer to Applications. Closing the window keeps the app,
-  and any running timer, alive in the Dock; quit with ⌘Q. The build is not notarized, so on a
-  *different* Mac the first launch needs right-click → **Open** (or `xattr -cr /Applications/PomoTimer.app`).
-- **Windows:** run the installer (it asks for the folder and adds Start Menu and desktop
-  shortcuts). SmartScreen may show "Windows protected your PC" for an unsigned app: click
-  **More info → Run anyway**. Closing the window quits the app.
-- **Development:** run `npm run dev` in one terminal and `npm run desktop:dev` in another; the
-  window loads the Vite dev server with hot reload and opens DevTools.
-- **Building the Windows installer on a Mac** needs no Wine or Rosetta: `electron-builder.yml`
-  pins electron-builder's newer NSIS toolset, which ships native Apple Silicon binaries. The
-  first build downloads Electron for each target (about 100 MB each) into electron-builder's
-  cache. Neither platform's build is code-signed.
+- Both installers build on a Mac. The Windows installer also builds on Windows; the Mac DMGs
+  need a Mac.
+- Building the Windows installer on a Mac needs no Wine or Rosetta: `electron-builder.yml` pins
+  electron-builder's newer NSIS toolset, which ships native Apple Silicon binaries.
+- The first build downloads Electron for each target (about 100 MB each) into electron-builder's
+  cache. Output lands in `release/`, which is gitignored.
+- Only `dist/`, `electron/main.cjs`, and `electron/preload.cjs` ship inside the app; no
+  `node_modules`. The renderer is fully bundled by Vite.
+- Builds are unsigned. To sign, give electron-builder a certificate through its
+  `CSC_LINK` / `CSC_KEY_PASSWORD` environment variables (and `APPLE_ID` /
+  `APPLE_APP_SPECIFIC_PASSWORD` / `APPLE_TEAM_ID` to notarize on Mac); see
+  <https://www.electron.build/code-signing>.
+- Bump `version` in `package.json` before a release; it appears in the installer file names
+  and in the Mac app's **About PomoTimer** box.
+
+### Develop
+
+Run `npm run dev` in one terminal and `npm run desktop:dev` in another. The window loads the
+Vite dev server with hot reload and opens DevTools. On Windows, toast notifications may not show
+in this mode until the app has been installed once from the installer (Windows ties them to the
+Start Menu shortcut).
 
 Sign-in state and settings live in the app's own profile (`~/Library/Application Support/PomoTimer`
-on Mac, `%APPDATA%\PomoTimer` on Windows), separate from any browser.
+on Mac, `%APPDATA%\PomoTimer` on Windows), separate from any browser, and shared between
+`npm run desktop:dev` and the installed app.
 
 **Browser instead:** `start-mac.command` / `start-windows.bat` (or `python3 pomodoro.py`) still
 serve `dist/` at **http://localhost:8765** and open it in your default browser.
@@ -142,6 +187,25 @@ this permission for timer apps.
   Pausing or resetting cancels it.
 - Categories, durations, and the current task are per-device settings; sessions sync.
 - Long-press (or double-click) a category chip to remove it.
+
+---
+
+## ⏱ How the Timer Behaves on Mac and Windows
+
+- The clock keeps ticking at full rate while the window is hidden, minimised, or behind other
+  windows (Electron's background throttling is turned off for this window).
+- When a timer ends the app plays the alert sound, shows a system notification, and bounces the
+  Dock icon (Mac) or flashes the taskbar button (Windows) without stealing focus. Clicking the
+  notification brings the window forward.
+- **Mac:** closing the window hides it; the app and any running timer stay alive in the Dock.
+  Click the Dock icon to bring it back, ⌘Q to quit.
+- **Windows:** closing the window quits the app. A running timer is not lost: its end time is
+  saved, so the next launch resyncs the clock and, if the timer already ended, logs the session
+  with the correct end time. No alert fires while the app is closed, though.
+- Launching the app a second time just focuses the existing window.
+- Export CSV / JSON opens a normal save dialog; Import JSON opens a file picker.
+- Links that would leave the app (for example in a Supabase confirmation email) open in your
+  default browser.
 
 ---
 
