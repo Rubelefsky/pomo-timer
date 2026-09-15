@@ -11,3 +11,7 @@ backups/
 
 # Desktop installers (electron-builder output)
 release/
+
+# IDE state (Android Studio / IntelliJ, Xcode SwiftPM cache)
+.idea/
+ios/App/App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
