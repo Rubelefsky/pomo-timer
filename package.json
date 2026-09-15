@@ -2,14 +2,22 @@
   "name": "pomo-timer",
   "private": true,
   "version": "2.0.0",
+  "description": "Pomodoro timer with a dashboard, history, and cross-device sync",
+  "author": "Brandon Rubell",
   "type": "module",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview --port 8765",
     "sync": "vite build && cap sync",
     "ios": "vite build && cap sync ios && cap open ios",
-    "android": "vite build && cap sync android && cap open android"
+    "android": "vite build && cap sync android && cap open android",
+    "desktop": "vite build && electron .",
+    "desktop:dev": "electron . --dev",
+    "desktop:mac": "vite build && electron-builder --mac",
+    "desktop:win": "vite build && electron-builder --win",
+    "desktop:all": "vite build && electron-builder --mac --win"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.1",
@@ -26,6 +34,8 @@
     "@capacitor/android": "^8.5.2",
     "@capacitor/cli": "^8.5.2",
     "@capacitor/ios": "^8.5.2",
+    "electron": "^44.3.0",
+    "electron-builder": "^26.15.3",
     "vite": "^8.3.0"
   }
 }

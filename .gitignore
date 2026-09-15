@@ -8,3 +8,6 @@ __pycache__/
 # Legacy local session log — data now lives in Supabase.
 sessions.json
 backups/
+
+# Desktop installers (electron-builder output)
+release/

@@ -69,10 +69,15 @@ export async function cancelAlarm() {
   try { await LocalNotifications.cancel({ notifications: [{ id: ALARM_ID }] }); } catch {}
 }
 
-/** Desktop-browser notification (native platforms use the scheduled alarm instead). */
+/** Desktop notification for the browser and the Mac/Windows app (phones use the scheduled alarm). */
 export function notifyWeb(title, body) {
   if (isNative) return;
-  if ("Notification" in window && Notification.permission === "granted") new Notification(title, { body });
+  // In the desktop app (see electron/preload.cjs) also bounce the Dock icon / flash the taskbar.
+  window.desktop?.timerEnded();
+  if ("Notification" in window && Notification.permission === "granted") {
+    const n = new Notification(title, { body });
+    n.onclick = () => { if (window.desktop) window.desktop.focus(); else window.focus(); n.close(); };
+  }
 }
 
 /** Run `cb` whenever the app returns to the foreground. */
